@@ -55,6 +55,7 @@ databases:
   db_auth_name: acore_auth
   db_characters_name: acore_characters
   db_world_name: acore_world
+  db_playerbots_name: acore_playerbots
   # External DB hostname is optional field to use external database,
   # will use credentials and databases names from above to build connection string.
   # Don't forget to disable mysql with mysql.enabled=false.
@@ -207,9 +208,10 @@ gameserver_ac:
   port_world: 9601
   port_health: 9604
   image:
-    repository: ghcr.io/walkline/gameserver-ac
+    repository: ghcr.io/iamangus/gameserver-ac
     pullPolicy: Always
-    tag: *defaultImagesTag
+    tag: master
+  imagePullSecrets: []
   service:
     type: ClusterIP
     internalPort: 9509

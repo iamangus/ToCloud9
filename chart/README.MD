@@ -86,11 +86,15 @@ The playerbot module must be compiled into the deployed gameserver image with
 ToCloud9's `libsidecar` available at build and runtime. The module publishes to
 `playerbots.v1.events.<shard>.<owner>.<bot>` and subscribes to
 `playerbots.v1.commands.<owner>`. Keep the worldserver gRPC/NATS endpoints internal
-to the cluster.
+to the cluster. The chart mounts `PlayerbotsDatabaseInfo` from a Secret and creates
+`acore_playerbots`; the module's startup DB updater populates and upgrades it from
+the module SQL copied into the gameserver image. For an external MySQL service, its
+user must also have permission to create/update that schema.
 
-The stock ToCloud9 gameserver image does not include `mod-playerbots`. Build a
-custom gameserver image from a core revision compatible with this module, while
-retaining the ToCloud9 patches and sidecar. In this public checkout, the
-gameserver Dockerfile references `game-server/azerothcore/patches`, which is not
-present in the repository tree; reconcile that build context with the source used
-by your deployed image before building.
+The stock `walkline/gameserver-ac` image does not include `mod-playerbots`. This
+fork's gameserver Dockerfile now builds from the Playerbot-compatible core fork and
+checks out the matching `mod-playerbots` module revision before CMake configuration;
+it also builds and links ToCloud9's `libsidecar`. The gameserver workflow publishes
+`ghcr.io/iamangus/gameserver-ac:<branch>` on pushes to `master` and can be run
+manually. Keep the core and module refs in the Dockerfile pinned together when
+updating either project.

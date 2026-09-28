@@ -1,6 +1,16 @@
 name: Build and Push Gameserver Images
 
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - game-server/azerothcore/Dockerfile
+      - game-server/libsidecar-cpp/**
+      - api/proto/**
+      - sql/**
+      - chart/files/playerbots.conf
+      - .github/workflows/build-and-push-gameserver-images.yml
   workflow_dispatch:
 
 permissions:

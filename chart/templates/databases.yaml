@@ -17,11 +17,15 @@ data:
 
     CREATE DATABASE IF NOT EXISTS `{{ .Values.databases.db_auth_name }}` DEFAULT CHARACTER SET UTF8MB4 COLLATE utf8mb4_unicode_ci;
 
+    CREATE DATABASE IF NOT EXISTS `{{ .Values.databases.db_playerbots_name }}` DEFAULT CHARACTER SET UTF8MB4 COLLATE utf8mb4_unicode_ci;
+
     GRANT ALL PRIVILEGES ON `{{ .Values.databases.db_world_name }}` . * TO '{{ .Values.databases.db_user }}' WITH GRANT OPTION;
 
     GRANT ALL PRIVILEGES ON `{{ .Values.databases.db_characters_name }}` . * TO '{{ .Values.databases.db_user }}' WITH GRANT OPTION;
 
     GRANT ALL PRIVILEGES ON `{{ .Values.databases.db_auth_name }}` . * TO '{{ .Values.databases.db_user }}' WITH GRANT OPTION;
+
+    GRANT ALL PRIVILEGES ON `{{ .Values.databases.db_playerbots_name }}` . * TO '{{ .Values.databases.db_user }}' WITH GRANT OPTION;
 
 ---
 apiVersion: v1

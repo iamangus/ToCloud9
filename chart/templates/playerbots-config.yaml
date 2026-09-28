@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-playerbots-config
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+stringData:
+  playerbots.conf: |
+    AiPlayerbot.Enabled = {{ if .Values.playerbots.enabled }}1{{ else }}0{{ end }}
+    AiPlayerbot.AgentBridge.Enabled = {{ if .Values.playerbots.agentBridge.enabled }}1{{ else }}0{{ end }}
+    AiPlayerbot.AgentBridge.BotGuid = {{ .Values.playerbots.agentBridge.botGuid }}
+    AiPlayerbot.AgentBridge.SubjectPrefix = {{ .Values.agent_controller.subjectPrefix | quote }}
+    {{- if ne .Values.databases.external_db_hostname "" }}
+    PlayerbotsDatabaseInfo = {{ printf "%s;%s;%s;%s;%s" .Values.databases.external_db_hostname .Values.databases.external_db_port .Values.databases.db_user .Values.databases.db_password .Values.databases.db_playerbots_name | quote }}
+    {{- else }}
+    PlayerbotsDatabaseInfo = {{ printf "%s-mysql-headless;3306;%s;%s;%s" .Release.Name .Values.databases.db_user .Values.databases.db_password .Values.databases.db_playerbots_name | quote }}
+    {{- end }}

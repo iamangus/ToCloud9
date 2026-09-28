@@ -14,10 +14,24 @@ spec:
       labels:
         app: {{ $fullname }}-gameserver-ac
     spec:
+      {{- with .Values.gameserver_ac.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | indent 8 }}
+      {{- end }}
       volumes:
         - name: etc-vol
-          configMap:
-            name: {{ $fullname }}-worldserver-conf
+          projected:
+            sources:
+              - configMap:
+                  name: {{ $fullname }}-worldserver-conf
+                  items:
+                    - key: worldserver.conf
+                      path: worldserver.conf
+              - secret:
+                  name: {{ .Release.Name }}-playerbots-config
+                  items:
+                    - key: playerbots.conf
+                      path: playerbots.conf
         - name: data-vol
           persistentVolumeClaim:
             claimName: {{ $fullname }}-gameserver-ac-data-shared-pv-claim
@@ -165,5 +179,3 @@ metadata:
 data:
   worldserver.conf: |
 {{ $.Files.Get "files/worldserver.conf" | indent 4 }}
-  playerbots.conf: |
-{{ tpl ($.Files.Get "files/playerbots.conf") $ | indent 4 }}

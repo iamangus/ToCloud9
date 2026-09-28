@@ -48,16 +48,23 @@ RUN apt-get install -yq git clang cmake make gcc g++ libmysqlclient-dev libssl-d
 RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
 RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang 100
 
-RUN mkdir repo
-RUN cd repo && git init && \
-    git remote add origin https://github.com/azerothcore/azerothcore-wotlk.git && \
-    git fetch --depth 1 origin 0c0a3327926e4664c86ac4a5322a1596ddf4fdaa && \
-    git checkout FETCH_HEAD
+ARG AZEROTHCORE_REPOSITORY=https://github.com/iamangus/azerothcore-wotlk.git
+ARG AZEROTHCORE_REF=7f12e89ee5f467a50e62eba1d525eac7dc953d03
+ARG MOD_PLAYERBOTS_REPOSITORY=https://github.com/iamangus/mod-playerbots.git
+ARG MOD_PLAYERBOTS_REF=d30cb6659a8ba7090f7978947195c0de7e664f53
 
-COPY game-server/azerothcore/patches /tmp/azerothcore-patches
-RUN cd /repo && \
-    git apply --check /tmp/azerothcore-patches/*.patch && \
-    git apply /tmp/azerothcore-patches/*.patch
+RUN git init /repo && \
+    git -C /repo remote add origin "${AZEROTHCORE_REPOSITORY}" && \
+    git -C /repo fetch --depth 1 origin "${AZEROTHCORE_REF}" && \
+    git -C /repo checkout FETCH_HEAD
+
+# Use the Playerbot-compatible AzerothCore fork. Its Playerbot branch already
+# contains ToCloud9's TC9Sidecar hooks; the module is built into this same tree.
+RUN mkdir -p /repo/modules/mod-playerbots && \
+    git -C /repo/modules/mod-playerbots init && \
+    git -C /repo/modules/mod-playerbots remote add origin "${MOD_PLAYERBOTS_REPOSITORY}" && \
+    git -C /repo/modules/mod-playerbots fetch --depth 1 origin "${MOD_PLAYERBOTS_REF}" && \
+    git -C /repo/modules/mod-playerbots checkout FETCH_HEAD
 
 # Shared library (unversioned name; ABI is in tc9_version.h / TC9GetVersion)
 COPY --from=build-sidecar /build/libsidecar-cpp/build/libsidecar.so ./repo/deps/libsidecar/libsidecar.so
@@ -132,6 +139,8 @@ COPY --from=build-sidecar /build/libsidecar-cpp/build/libsidecar.so /usr/lib/lib
 
 COPY --from=build-core /repo/bin/etc/worldserver.conf.dist /repo/bin/etc/worldserver.conf
 COPY --from=build-core /repo/bin/bin/worldserver /repo/bin/worldserver
+# PlayerbotDatabaseScript loads this SQL tree at worldserver startup.
+COPY --from=build-core /repo/modules/mod-playerbots/data/sql/playerbots /repo/modules/mod-playerbots/data/sql/playerbots
 
 WORKDIR /repo/bin
 
