@@ -1,0 +1,125 @@
+{{- if .Values.agent_controller.enabled }}
+{{- if not .Values.playerbots.enabled }}
+{{- fail "agent_controller requires playerbots.enabled=true" }}
+{{- end }}
+{{- if not .Values.playerbots.agentBridge.enabled }}
+{{- fail "agent_controller requires playerbots.agentBridge.enabled=true" }}
+{{- end }}
+{{- if or (gt (int .Values.agent_controller.replicaCount) 256) (lt (int .Values.agent_controller.replicaCount) 1) }}
+{{- fail "agent_controller.replicaCount must be between 1 and 256" }}
+{{- end }}
+{{- if or (eq .Values.agent_controller.modelEndpoint "") (eq .Values.agent_controller.modelName "") }}
+{{- fail "agent_controller.modelEndpoint and modelName are required when enabled" }}
+{{- end }}
+{{- $fullname := printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-agent-controller
+  labels:
+    app: {{ $fullname }}-agent-controller
+spec:
+  clusterIP: None
+  ports:
+    - name: health
+      port: 8098
+      targetPort: health
+  selector:
+    app: {{ $fullname }}-agent-controller
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $fullname }}-agent-controller
+  labels:
+    app: {{ $fullname }}-agent-controller
+spec:
+  serviceName: {{ $fullname }}-agent-controller
+  replicas: {{ .Values.agent_controller.replicaCount | int }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ $fullname }}-agent-controller
+  template:
+    metadata:
+      labels:
+        app: {{ $fullname }}-agent-controller
+    spec:
+      terminationGracePeriodSeconds: 90
+      {{- with .Values.agent_controller.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: {{ $fullname }}-agent-controller
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: {{ $fullname }}-agent-controller
+      containers:
+        - name: agent-controller
+          image: "{{ .Values.agent_controller.image.repository }}:{{ .Values.agent_controller.image.tag }}"
+          imagePullPolicy: {{ .Values.agent_controller.image.pullPolicy }}
+          env:
+            - name: TC9_NATS_URL
+              value: "nats://{{ .Release.Name }}-nats:4222"
+            - name: AGENT_STATE_REDIS_URL
+              value: {{ default (printf "redis://%s-redis-headless:6379/0" .Release.Name) .Values.agent_controller.redisURL | quote }}
+            - name: AGENT_SUBJECT_PREFIX
+              value: {{ .Values.agent_controller.subjectPrefix | quote }}
+            - name: AGENT_SHARD_COUNT
+              value: {{ .Values.agent_controller.replicaCount | quote }}
+            - name: LLM_ENDPOINT
+              value: {{ .Values.agent_controller.modelEndpoint | quote }}
+            - name: LLM_MODEL
+              value: {{ .Values.agent_controller.modelName | quote }}
+            - name: AGENT_DECISION_INTERVAL
+              value: {{ .Values.agent_controller.decisionInterval | quote }}
+            - name: LLM_REQUEST_TIMEOUT
+              value: {{ .Values.agent_controller.requestTimeout | quote }}
+            - name: AGENT_MODEL_WORKERS
+              value: {{ .Values.agent_controller.modelWorkers | quote }}
+            - name: AGENT_DECISION_QUEUE_CAPACITY
+              value: {{ .Values.agent_controller.decisionQueueCapacity | quote }}
+            - name: AGENT_HEALTH_PORT
+              value: "8098"
+{{ if .Values.agent_controller.apiKeySecretName }}
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.agent_controller.apiKeySecretName | quote }}
+                  key: api-key
+{{ end }}
+          ports:
+            - name: health
+              containerPort: 8098
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+{{ toYaml .Values.agent_controller.resources | indent 12 }}
+{{- end }}

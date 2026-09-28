@@ -1,0 +1,34 @@
+name: playerbot-agent-chart
+
+on:
+  pull_request:
+    paths:
+      - "chart/**"
+      - ".github/workflows/playerbot-agent-chart.yml"
+  push:
+    branches:
+      - master
+      - "external-agent-controller"
+    paths:
+      - "chart/**"
+      - ".github/workflows/playerbot-agent-chart.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+      - run: helm lint ./chart
+      - run: >-
+          helm template test ./chart
+          --set playerbots.agentBridge.enabled=true
+          --set agent_controller.enabled=true
+          --set agent_controller.replicaCount=4
+          --set agent_controller.modelEndpoint=https://llm.example/v1/chat/completions
+          --set agent_controller.modelName=example-model

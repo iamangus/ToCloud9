@@ -11,6 +11,9 @@ global:
 redis:
   enabled: true
   architecture: standalone
+  master:
+    persistence:
+      enabled: true
   image:
     repository: bitnamilegacy/redis
     tag: 7.2.3-debian-11-r1
@@ -19,6 +22,14 @@ redis:
     enabled: false
 nats:
   enabled: true
+  config:
+    jetstream:
+      enabled: true
+      fileStore:
+        enabled: true
+        pvc:
+          enabled: true
+          size: 20Gi
 mysql:
   enabled: true
   image:
@@ -202,4 +213,36 @@ gameserver_ac:
   service:
     type: ClusterIP
     internalPort: 9509
-    externalPort: 9509
+  externalPort: 9509
+
+playerbots:
+  enabled: true
+  agentBridge:
+    enabled: false
+    # 0 enables all playerbots; use one character GUID counter for a canary.
+    botGuid: 0
+
+agent_controller:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/iamangus/playerbot-agent-controller
+    pullPolicy: IfNotPresent
+    tag: latest
+  imagePullSecrets: []
+  # Use a pre-created Kubernetes Secret with a key named api-key.
+  apiKeySecretName: ""
+  modelEndpoint: ""
+  modelName: ""
+  subjectPrefix: playerbots.v1
+  redisURL: ""
+  decisionInterval: 30m
+  requestTimeout: 30s
+  modelWorkers: 16
+  decisionQueueCapacity: 4096
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      memory: 1Gi

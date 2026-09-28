@@ -41,3 +41,56 @@ helm install cloud9 ./chart -n tocloud9 \
 ```
 
 More parameters specified in the [values](values.yaml) file.
+
+## External playerbot agent controller
+
+The `agent_controller` StatefulSet is disabled by default. Enable both
+`agent_controller.enabled` and `playerbots.agentBridge.enabled`. It connects to ToCloud9
+NATS and Redis, consumes assigned bot-event shards, and routes typed primitive
+commands to the owning worldserver using the event's owner token. The
+`iamangus/mod-playerbots` GitHub Actions workflow builds and publishes
+`ghcr.io/iamangus/playerbot-agent-controller` from `mod-playerbots/agent-controller`.
+Make that GHCR package public for unauthenticated cluster pulls, or configure an image
+pull secret. Then provide an OpenAI-compatible tool-calling endpoint/model.
+Provide the LLM API key through an existing Kubernetes Secret (`api-key` key), not a
+plain values file. The controller stores persona, memory, and external task state in
+Redis; it does not connect to the AzerothCore databases.
+
+Create the secret in the release namespace, then set these values in your normal
+ToCloud9 values override:
+
+```yaml
+playerbots:
+  enabled: true
+  agentBridge:
+    enabled: true
+    botGuid: 0 # 0 enables every playerbot; use one GUID counter for a canary
+agent_controller:
+  enabled: true
+  replicaCount: 4
+  image:
+    repository: ghcr.io/iamangus/playerbot-agent-controller
+    tag: latest
+  apiKeySecretName: playerbot-llm
+  modelEndpoint: https://<provider>/v1/chat/completions
+  modelName: <tool-capable-model>
+```
+
+The controller partitions bots across 256 virtual event shards. Each StatefulSet pod
+subscribes to its assigned shards; increasing `agent_controller.replicaCount` moves
+shards between pods. The chart enables file-backed JetStream with a bounded event
+stream, Redis actor leases fence overlapping ownership during resharding, and bot
+heartbeats allow state/snapshot recovery after a rollout.
+
+The playerbot module must be compiled into the deployed gameserver image with
+ToCloud9's `libsidecar` available at build and runtime. The module publishes to
+`playerbots.v1.events.<shard>.<owner>.<bot>` and subscribes to
+`playerbots.v1.commands.<owner>`. Keep the worldserver gRPC/NATS endpoints internal
+to the cluster.
+
+The stock ToCloud9 gameserver image does not include `mod-playerbots`. Build a
+custom gameserver image from a core revision compatible with this module, while
+retaining the ToCloud9 patches and sidecar. In this public checkout, the
+gameserver Dockerfile references `game-server/azerothcore/patches`, which is not
+present in the repository tree; reconcile that build context with the source used
+by your deployed image before building.
