@@ -21,8 +21,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: 'Set up QEMU'
-        uses: docker/setup-qemu-action@v3
       - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v3
       - name: 'Login to GitHub Container Registry'
@@ -34,48 +32,48 @@ jobs:
 
       - name: 'Build and push "auctionhouse" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/auctionhouse:${{github.ref_name}} -f apps/auctionhouse/Dockerfile .
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/auctionhouse:${{github.ref_name}} -f apps/auctionhouse/Dockerfile .
 
       - name: 'Build and push "authserver" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/authserver:${{github.ref_name}} -f apps/authserver/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/authserver:${{github.ref_name}} -f apps/authserver/Dockerfile .
 
       - name: 'Build and push "charserver" image'
-        run: |          
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/charserver:${{github.ref_name}} -f apps/charserver/Dockerfile . 
+        run: |
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/charserver:${{github.ref_name}} -f apps/charserver/Dockerfile .
 
       - name: 'Build and push "chatserver" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/chatserver:${{github.ref_name}} -f apps/chatserver/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/chatserver:${{github.ref_name}} -f apps/chatserver/Dockerfile .
 
       - name: 'Build and push "gateway" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/gateway:${{github.ref_name}} -f apps/gateway/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/gateway:${{github.ref_name}} -f apps/gateway/Dockerfile .
 
       - name: 'Build and push "guidserver" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/guidserver:${{github.ref_name}} -f apps/guidserver/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/guidserver:${{github.ref_name}} -f apps/guidserver/Dockerfile .
 
       - name: 'Build and push "guildserver" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/guildserver:${{github.ref_name}} -f apps/guildserver/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/guildserver:${{github.ref_name}} -f apps/guildserver/Dockerfile .
 
       - name: 'Build and push "mailserver" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/mailserver:${{github.ref_name}} -f apps/mailserver/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/mailserver:${{github.ref_name}} -f apps/mailserver/Dockerfile .
 
       - name: 'Build and push "groupserver" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/groupserver:${{github.ref_name}} -f apps/groupserver/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/groupserver:${{github.ref_name}} -f apps/groupserver/Dockerfile .
 
       - name: 'Build and push "matchmakingserver" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/matchmakingserver:${{github.ref_name}} -f apps/matchmakingserver/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/matchmakingserver:${{github.ref_name}} -f apps/matchmakingserver/Dockerfile .
 
       - name: 'Build and push "mysqlreverseproxy" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/mysqlreverseproxy:${{github.ref_name}} -f apps/mysqlreverseproxy/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/mysqlreverseproxy:${{github.ref_name}} -f apps/mysqlreverseproxy/Dockerfile .
 
       - name: 'Build and push "servers-registry" image'
         run: |
-          docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/${{github.actor}}/servers-registry:${{github.ref_name}} -f apps/servers-registry/Dockerfile . 
+          docker buildx build --push --platform linux/amd64 -t ghcr.io/${{github.actor}}/servers-registry:${{github.ref_name}} -f apps/servers-registry/Dockerfile .

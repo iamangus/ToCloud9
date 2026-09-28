@@ -117,91 +117,6 @@ jobs:
           name: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-linux-x64
           path: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-linux-x64.tar.gz
 
-  build-linux-arm64:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache CMake build
-        uses: actions/cache@v4
-        with:
-          path: |
-            game-server/libsidecar-cpp/build/_deps
-            ~/.cache
-          key: ${{ runner.os }}-arm64-cmake-${{ hashFiles('game-server/libsidecar-cpp/CMakeLists.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-arm64-cmake-
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++ libssl-dev zlib1g-dev pkg-config
-
-      - name: Build libsidecar-cpp
-        working-directory: game-server/libsidecar-cpp
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTS=ON \
-            -DUSE_SYSTEM_GRPC=OFF \
-            -DUSE_SYSTEM_PROTOBUF=OFF
-          cmake --build . --config Release -j $(nproc)
-          LIBSIDECAR_VERSION=$(grep '^CMAKE_PROJECT_VERSION:STATIC=' CMakeCache.txt | cut -d= -f2)
-          echo "LIBSIDECAR_VERSION=${LIBSIDECAR_VERSION}" >> "$GITHUB_ENV"
-          echo "libsidecar version: ${LIBSIDECAR_VERSION}"
-
-      - name: Verify tag matches CMake version
-        if: startsWith(github.ref, 'refs/tags/libsidecar-v')
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#libsidecar-v}"
-          if [ "${TAG_VERSION}" != "${LIBSIDECAR_VERSION}" ]; then
-            echo "::error::Tag libsidecar-v${TAG_VERSION} does not match CMake project VERSION ${LIBSIDECAR_VERSION}."
-            exit 1
-          fi
-
-      - name: Run tests
-        working-directory: game-server/libsidecar-cpp/build
-        run: |
-          ctest --output-on-failure --verbose -R "^(libsidecar_tests|CApiCompatibility)$" -E "Benchmark"
-
-      - name: Package artifacts
-        run: |
-          mkdir -p artifacts/lib artifacts/include
-          cp -P game-server/libsidecar-cpp/build/libsidecar.so* artifacts/lib/
-          cp game-server/libsidecar-cpp/include/*.h artifacts/include/
-          cp game-server/libsidecar-cpp/build/generated/include/tc9_version.h artifacts/include/
-          cp -r game-server/libsidecar-cpp/include/libsidecar artifacts/include/
-
-          cat > artifacts/README.txt << EOF
-          libsidecar-cpp for Linux ARM64
-
-          Version: ${LIBSIDECAR_VERSION}
-          Git tag: ${GITHUB_REF_NAME}
-          Commit: ${GITHUB_SHA}
-
-          Build Information:
-          - Platform: Linux ARM64
-          - C++ Standard: C++17
-          - Build Type: Release
-
-          Files:
-          - lib/libsidecar.so*
-          - include/*.h including generated tc9_version.h
-          - include/libsidecar/
-          EOF
-
-          ARCHIVE="libsidecar-cpp-${LIBSIDECAR_VERSION}-linux-arm64.tar.gz"
-          cd artifacts
-          tar -czf "../${ARCHIVE}" *
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-linux-arm64
-          path: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-linux-arm64.tar.gz
-
   build-windows-x64:
     runs-on: windows-2022
     strategy:
@@ -318,93 +233,8 @@ jobs:
           name: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-windows-x64-${{ matrix.toolset }}
           path: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-windows-x64-${{ matrix.toolset }}.zip
 
-  build-macos-arm64:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache CMake build
-        uses: actions/cache@v4
-        with:
-          path: |
-            game-server/libsidecar-cpp/build/_deps
-            ~/Library/Caches/Homebrew
-          key: ${{ runner.os }}-arm64-cmake-${{ hashFiles('game-server/libsidecar-cpp/CMakeLists.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-arm64-cmake-
-
-      - name: Install dependencies
-        run: |
-          brew install cmake openssl zlib
-
-      - name: Build libsidecar-cpp
-        working-directory: game-server/libsidecar-cpp
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTS=ON \
-            -DUSE_SYSTEM_GRPC=OFF \
-            -DUSE_SYSTEM_PROTOBUF=OFF \
-            -DOPENSSL_ROOT_DIR=$(brew --prefix openssl)
-          cmake --build . --config Release -j $(sysctl -n hw.ncpu)
-          LIBSIDECAR_VERSION=$(grep '^CMAKE_PROJECT_VERSION:STATIC=' CMakeCache.txt | cut -d= -f2)
-          echo "LIBSIDECAR_VERSION=${LIBSIDECAR_VERSION}" >> "$GITHUB_ENV"
-          echo "libsidecar version: ${LIBSIDECAR_VERSION}"
-
-      - name: Verify tag matches CMake version
-        if: startsWith(github.ref, 'refs/tags/libsidecar-v')
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#libsidecar-v}"
-          if [ "${TAG_VERSION}" != "${LIBSIDECAR_VERSION}" ]; then
-            echo "::error::Tag libsidecar-v${TAG_VERSION} does not match CMake project VERSION ${LIBSIDECAR_VERSION}."
-            exit 1
-          fi
-
-      - name: Run tests
-        working-directory: game-server/libsidecar-cpp/build
-        run: |
-          ctest --output-on-failure --verbose -R "^(libsidecar_tests|CApiCompatibility)$" -E "Benchmark"
-
-      - name: Package artifacts
-        run: |
-          mkdir -p artifacts/lib artifacts/include
-          cp -P game-server/libsidecar-cpp/build/libsidecar*.dylib artifacts/lib/
-          cp game-server/libsidecar-cpp/include/*.h artifacts/include/
-          cp game-server/libsidecar-cpp/build/generated/include/tc9_version.h artifacts/include/
-          cp -r game-server/libsidecar-cpp/include/libsidecar artifacts/include/
-
-          cat > artifacts/README.txt << EOF
-          libsidecar-cpp for macOS ARM64 (Apple Silicon)
-
-          Version: ${LIBSIDECAR_VERSION}
-          Git tag: ${GITHUB_REF_NAME}
-          Commit: ${GITHUB_SHA}
-
-          Build Information:
-          - Platform: macOS ARM64
-          - C++ Standard: C++17
-          - Build Type: Release
-
-          Files:
-          - lib/libsidecar*.dylib
-          - include/*.h including generated tc9_version.h
-          - include/libsidecar/
-          EOF
-
-          ARCHIVE="libsidecar-cpp-${LIBSIDECAR_VERSION}-macos-arm64.tar.gz"
-          cd artifacts
-          tar -czf "../${ARCHIVE}" *
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-macos-arm64
-          path: libsidecar-cpp-${{ env.LIBSIDECAR_VERSION }}-macos-arm64.tar.gz
-
   create-release:
-    needs: [build-linux-x64, build-linux-arm64, build-windows-x64, build-macos-arm64]
+    needs: [build-linux-x64, build-windows-x64]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/libsidecar-v')
     steps:
@@ -446,10 +276,8 @@ jobs:
             echo "| Archive pattern | Platform |"
             echo "|-----------------|----------|"
             echo "| \`libsidecar-cpp-${VERSION}-linux-x64.tar.gz\` | Linux x86_64 |"
-            echo "| \`libsidecar-cpp-${VERSION}-linux-arm64.tar.gz\` | Linux ARM64 |"
             echo "| \`libsidecar-cpp-${VERSION}-windows-x64-v143.zip\` | Windows / VS 2022 |"
             echo "| \`libsidecar-cpp-${VERSION}-windows-x64-v142.zip\` | Windows / VS 2019 |"
-            echo "| \`libsidecar-cpp-${VERSION}-macos-arm64.tar.gz\` | macOS Apple Silicon |"
             echo ""
             echo "Heavy dependencies (gRPC, NATS, prometheus, etc.) are statically linked."
           } > release-body.md

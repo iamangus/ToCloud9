@@ -16,11 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
-        exclude:
-          - goos: windows
-            goarch: arm64
+        goos: [linux, windows]
+        goarch: [amd64]
     name: go-services-${{ matrix.goos }}-${{ matrix.goarch }}
 
     steps:
@@ -121,7 +118,7 @@ jobs:
 
           Installation:
           1. Extract archive
-          2. Make executables (Linux/macOS): chmod +x bin/*
+          2. Make executables (Linux): chmod +x bin/*
           3. Edit bin/config.yml for your environment
           4. Run service: ./bin/<service>
 
