@@ -223,6 +223,16 @@ playerbots:
     enabled: false
     # 0 enables all playerbots; use one character GUID counter for a canary.
     botGuid: 0
+  randomBots:
+    # Online random-bot population target (login loop).
+    maxOnline: 50
+    # Auto-created random-bot account pool at startup. Keep 0 for the
+    # persistent lifecycle: the external controller provisions every bot
+    # at level 1 and none are pre-created here.
+    accountCount: 0
+    # Randomize bot level/gear on login. Must be 0 for the persistent
+    # lifecycle so characters keep natural progression.
+    autoRandomize: false
 
 agent_controller:
   enabled: false
