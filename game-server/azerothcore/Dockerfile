@@ -51,7 +51,7 @@ RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang 100
 ARG AZEROTHCORE_REPOSITORY=https://github.com/iamangus/azerothcore-wotlk.git
 ARG AZEROTHCORE_REF=7f12e89ee5f467a50e62eba1d525eac7dc953d03
 ARG MOD_PLAYERBOTS_REPOSITORY=https://github.com/iamangus/mod-playerbots.git
-ARG MOD_PLAYERBOTS_REF=85decd24a6cddce327c235fef229a7ef19c1761b
+ARG MOD_PLAYERBOTS_REF=6fca8b614ed8e5e588e0367213ec9517480e51ea
 
 RUN git init /repo && \
     git -C /repo remote add origin "${AZEROTHCORE_REPOSITORY}" && \

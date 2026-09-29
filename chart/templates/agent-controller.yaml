@@ -91,6 +91,28 @@ spec:
               value: {{ .Values.agent_controller.decisionQueueCapacity | quote }}
             - name: AGENT_HEALTH_PORT
               value: "8098"
+            - name: AGENT_POPULATION_ENABLED
+              value: {{ .Values.agent_controller.population.enabled | quote }}
+            - name: AGENT_POPULATION_TARGET_TOTAL
+              value: {{ .Values.agent_controller.population.targetTotal | quote }}
+            - name: AGENT_POPULATION_ZONE_TARGETS
+              value: {{ .Values.agent_controller.population.zoneTargets | quote }}
+            - name: AGENT_POPULATION_RACE_WEIGHTS
+              value: {{ .Values.agent_controller.population.raceWeights | quote }}
+            - name: AGENT_POPULATION_CLASS_WEIGHTS
+              value: {{ .Values.agent_controller.population.classWeights | quote }}
+            - name: AGENT_POPULATION_MAX_CONCURRENT
+              value: {{ .Values.agent_controller.population.maxConcurrent | quote }}
+            - name: AGENT_POPULATION_MAX_PER_HOUR
+              value: {{ .Values.agent_controller.population.maxPerHour | quote }}
+            - name: AGENT_POPULATION_COHORT_ENABLED
+              value: {{ .Values.agent_controller.population.cohortEnabled | quote }}
+            - name: AGENT_POPULATION_COHORT_SIZE
+              value: {{ .Values.agent_controller.population.cohortSize | quote }}
+            - name: AGENT_POPULATION_SNAPSHOT_INTERVAL
+              value: {{ .Values.agent_controller.population.snapshotInterval | quote }}
+            - name: AGENT_POPULATION_REFILL_INTERVAL
+              value: {{ .Values.agent_controller.population.refillInterval | quote }}
 {{ if .Values.agent_controller.apiKeySecretName }}
             - name: LLM_API_KEY
               valueFrom:

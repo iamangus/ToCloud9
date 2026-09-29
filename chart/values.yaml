@@ -242,6 +242,22 @@ agent_controller:
   requestTimeout: 30s
   modelWorkers: 16
   decisionQueueCapacity: 4096
+  # External bot population management (persistent level-1 bots).
+  population:
+    enabled: false
+    targetTotal: 200
+    # JSON map of starting zone id -> desired low-level bot count, e.g.
+    # '{"12":5,"14":5,"1":5,"85":5,"215":5,"141":5,"3430":5,"3483":5}'
+    zoneTargets: "{}"
+    # Optional JSON maps of race/class id -> relative weight. Empty = equal share.
+    raceWeights: "{}"
+    classWeights: "{}"
+    maxConcurrent: 2
+    maxPerHour: 60
+    cohortEnabled: false
+    cohortSize: 12
+    snapshotInterval: 2m
+    refillInterval: 5m
   resources:
     requests:
       cpu: 250m
