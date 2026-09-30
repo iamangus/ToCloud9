@@ -38,8 +38,8 @@ jobs:
         run: helm package chart --destination dist
       - name: Update gh-pages Helm index
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           repo_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
           if git ls-remote --exit-code --heads "$repo_url" gh-pages > /dev/null 2>&1; then
             git clone --depth 1 --branch gh-pages "$repo_url" gh-pages
