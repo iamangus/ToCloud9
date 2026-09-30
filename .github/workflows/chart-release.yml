@@ -57,4 +57,4 @@ jobs:
             exit 0
           fi
           git commit -m "Publish chart ${GITHUB_REF_NAME}"
-          git push origin gh-pages
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" HEAD:gh-pages
