@@ -113,6 +113,11 @@ spec:
             secretKeyRef:
               name: {{ .Release.Name }}-databases-config
               key: AC_CHARACTER_DATABASE_INFO
+        - name: AC_PLAYERBOTS_DATABASE_INFO
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-databases-config
+              key: AC_PLAYERBOTS_DATABASE_INFO
         - name: AC_CONSOLE_ENABLE
           value: "1"
         - name: AC_DATA_DIR
