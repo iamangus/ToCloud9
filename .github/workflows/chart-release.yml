@@ -28,6 +28,10 @@ jobs:
             echo "::error::Tag chart-v$version does not match chart/Chart.yaml version '$chart_version'"
             exit 1
           fi
+      - name: Add dependency repositories
+        run: |
+          helm repo add nats https://nats-io.github.io/k8s/helm/charts/
+          helm repo add bitnami https://charts.bitnami.com/bitnami
       - name: Build chart dependencies
         run: helm dependency build chart
       - name: Package chart
