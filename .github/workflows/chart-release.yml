@@ -40,11 +40,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
-            git clone --depth 1 --branch gh-pages origin gh-pages
+          repo_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          if git ls-remote --exit-code --heads "$repo_url" gh-pages > /dev/null 2>&1; then
+            git clone --depth 1 --branch gh-pages "$repo_url" gh-pages
           else
             git init -b gh-pages gh-pages
-            git -C gh-pages remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+            git -C gh-pages remote add origin "$repo_url"
           fi
           cp dist/*.tgz gh-pages/
           touch gh-pages/.nojekyll
