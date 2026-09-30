@@ -1,0 +1,27 @@
+apiVersion: v1
+entries:
+  tocloud9:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2026-09-30T02:03:39.684133469Z"
+    dependencies:
+    - condition: nats.enabled
+      name: nats
+      repository: https://nats-io.github.io/k8s/helm/charts/
+      version: 1.1.5
+    - condition: redis.enabled
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: 18.4.0
+    - condition: mysql.enabled
+      name: mysql
+      repository: https://charts.bitnami.com/bitnami
+      version: 12.2.2
+    description: A Helm chart for Kubernetes
+    digest: 2423d0065fdc20663692c069a438f153b0c73fd8fe3b76710d0984447e5cdc53
+    name: tocloud9
+    type: application
+    urls:
+    - https://iamangus.github.io/ToCloud9/tocloud9-0.2.0.tgz
+    version: 0.2.0
+generated: "2026-09-30T02:03:39.670688122Z"
