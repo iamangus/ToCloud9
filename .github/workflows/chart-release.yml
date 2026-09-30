@@ -1,0 +1,55 @@
+name: chart-release
+
+on:
+  push:
+    tags:
+      - "chart-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chart-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+      - name: Verify tag matches chart version
+        run: |
+          version="${GITHUB_REF_NAME#chart-v}"
+          chart_version="$(awk '/^version:/{print $2; exit}' chart/Chart.yaml)"
+          if [ "$version" != "$chart_version" ]; then
+            echo "::error::Tag chart-v$version does not match chart/Chart.yaml version '$chart_version'"
+            exit 1
+          fi
+      - name: Build chart dependencies
+        run: helm dependency build chart
+      - name: Package chart
+        run: helm package chart --destination dist
+      - name: Update gh-pages Helm index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            git clone --depth 1 --branch gh-pages origin gh-pages
+          else
+            git init -b gh-pages gh-pages
+            git -C gh-pages remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          fi
+          cp dist/*.tgz gh-pages/
+          touch gh-pages/.nojekyll
+          helm repo index gh-pages --url "https://iamangus.github.io/ToCloud9"
+          cd gh-pages
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No chart changes to publish"
+            exit 0
+          fi
+          git commit -m "Publish chart ${GITHUB_REF_NAME}"
+          git push origin gh-pages
