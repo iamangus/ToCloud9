@@ -37,3 +37,8 @@ jobs:
           docker buildx build --push --platform linux/amd64 --output=type=image \
             -t ghcr.io/${{ github.actor }}/gameserver-ac:${{ github.ref_name }} \
             -f game-server/azerothcore/Dockerfile .
+      - name: Build and push AzerothCore dbimport image (AMD64)
+        run: |
+          docker buildx build --push --platform linux/amd64 --output=type=image \
+            -t ghcr.io/${{ github.actor }}/dbimport-ac:${{ github.ref_name }} \
+            -f game-server/azerothcore/Dockerfile --target db-import .
