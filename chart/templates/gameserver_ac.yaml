@@ -32,6 +32,14 @@ spec:
                   items:
                     - key: playerbots.conf
                       path: playerbots.conf
+        - name: modules-etc-vol
+          projected:
+            sources:
+              - secret:
+                  name: {{ .Release.Name }}-playerbots-config
+                  items:
+                    - key: playerbots.conf
+                      path: playerbots.conf
         - name: data-vol
           persistentVolumeClaim:
             claimName: {{ $fullname }}-gameserver-ac-data-shared-pv-claim
@@ -137,6 +145,8 @@ spec:
         volumeMounts:
           - name: etc-vol
             mountPath: /repo/bin/etc
+          - name: modules-etc-vol
+            mountPath: /repo/bin/etc/modules
           - name: data-vol
             mountPath: /data
         ports:
