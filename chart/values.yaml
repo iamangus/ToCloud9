@@ -1,7 +1,7 @@
 # Default values for tocloud9.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-tc9ImagesTag: &defaultImagesTag "v0.0.4"
+tc9ImagesTag: &defaultImagesTag "v0.1.0"
 
 global:
   security:
@@ -239,7 +239,7 @@ agent_controller:
   replicaCount: 1
   image:
     repository: ghcr.io/iamangus/playerbot-agent-controller
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: latest
   imagePullSecrets: []
   # Use a pre-created Kubernetes Secret with a key named api-key.
