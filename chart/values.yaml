@@ -246,6 +246,8 @@ agent_controller:
   apiKeySecretName: ""
   modelEndpoint: ""
   modelName: ""
+  # OpenRouter reasoning effort; empty omits the provider-specific parameter.
+  reasoningEffort: "low"
   subjectPrefix: playerbots.v1
   redisURL: ""
   decisionInterval: 30m

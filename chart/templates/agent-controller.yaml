@@ -81,6 +81,8 @@ spec:
               value: {{ .Values.agent_controller.modelEndpoint | quote }}
             - name: LLM_MODEL
               value: {{ .Values.agent_controller.modelName | quote }}
+            - name: LLM_REASONING_EFFORT
+              value: {{ .Values.agent_controller.reasoningEffort | quote }}
             - name: AGENT_DECISION_INTERVAL
               value: {{ .Values.agent_controller.decisionInterval | quote }}
             - name: LLM_REQUEST_TIMEOUT
