@@ -84,3 +84,12 @@ func TestAffinityMissingAfterRestartIsUnknownUntilExplicitLogout(t *testing.T) {
 		t.Fatal("login did not clear the offline tombstone before directory reconciliation")
 	}
 }
+
+func TestAffinityProjectionPrioritizesOnlineFriendsAndReportsTruncation(t *testing.T) {
+	b := NewPlayerbotsListener(nil, affinityTestCharacters{guids: []uint64{1, 2, 3, 4, 5, 6, 7, 8, 9}}, nil, "test", 1, "v1")
+	b.SetAffinityDirectory(affinityTestDirectory{characters: []repo.Character{{CharGUID: 9, CharName: "Human", GatewayID: "human"}}})
+	p, err := b.collectAffinityProjection(context.Background(), 99)
+	if err != nil || !p.Partial || len(p.Friends) != 8 || p.Friends[0].GUID != 9 || !p.Friends[0].Online {
+		t.Fatal("bounded projection hid the online friend or its partial coverage", err)
+	}
+}

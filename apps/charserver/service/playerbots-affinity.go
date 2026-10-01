@@ -36,32 +36,47 @@ func (b *PlayerbotsListener) refreshAffinity(ctx context.Context, bot *botPresen
 	bot.lastAffinityRefresh = now
 	requestCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	friends, err := b.collectAffinities(requestCtx, bot.login.CharGUID)
+	projection, err := b.collectAffinityProjection(requestCtx, bot.login.CharGUID)
 	if err != nil {
 		return err
 	}
-	return b.publishBotEvent(bot, "social_affinity", "", map[string]any{"realm_id": b.realm, "friends": friends})
+	return b.publishBotEvent(bot, "social_affinity", "", map[string]any{"realm_id": b.realm, "friends": projection.Friends, "partial": projection.Partial})
 }
 
 func (b *PlayerbotsListener) collectAffinities(requestCtx context.Context, botGUID uint64) ([]botHumanAffinity, error) {
-	guids, err := b.repo.GetPlayersWhoHaveAsFriend(requestCtx, b.realm, botGUID)
+	projection, err := b.collectAffinityProjection(requestCtx, botGUID)
 	if err != nil {
 		return nil, err
+	}
+	return projection.Friends, err
+}
+
+type botAffinityProjection struct {
+	Friends []botHumanAffinity
+	Partial bool
+}
+
+func (b *PlayerbotsListener) collectAffinityProjection(requestCtx context.Context, botGUID uint64) (botAffinityProjection, error) {
+	projection := botAffinityProjection{Friends: make([]botHumanAffinity, 0, 8)}
+	guids, err := b.repo.GetPlayersWhoHaveAsFriend(requestCtx, b.realm, botGUID)
+	if err != nil {
+		return projection, err
 	}
 	sort.Slice(guids, func(i, j int) bool { return guids[i] < guids[j] })
 	// Bound database/directory work per refresh, including offline acquaintances.
 	if len(guids) > 50 {
+		projection.Partial = true
 		guids = guids[:50]
 	}
 	characters, err := b.affinityDirectory.CharactersByRealmAndGUIDs(requestCtx, b.realm, guids)
 	if err != nil {
-		return nil, err
+		return projection, err
 	}
 	live := make(map[uint64]repo.Character, len(characters))
 	for _, character := range characters {
 		live[character.CharGUID] = character
 	}
-	friends := make([]botHumanAffinity, 0, 8)
+	friends := make([]botHumanAffinity, 0, len(guids))
 	for _, guid := range guids {
 		if guid == botGUID {
 			continue
@@ -75,11 +90,22 @@ func (b *PlayerbotsListener) collectAffinities(requestCtx context.Context, botGU
 			friend.Name, friend.Online, friend.Level, friend.Zone, friend.Map = character.CharName, true, uint32(character.CharLevel), character.CharZone, character.CharMap
 		}
 		friends = append(friends, friend)
-		if len(friends) == 8 {
-			break
-		}
 	}
-	return friends, nil
+	sort.Slice(friends, func(i, j int) bool {
+		if friends[i].Online != friends[j].Online {
+			return friends[i].Online
+		}
+		if friends[i].PresenceKnown != friends[j].PresenceKnown {
+			return !friends[i].PresenceKnown
+		}
+		return friends[i].GUID < friends[j].GUID
+	})
+	if len(friends) > 8 {
+		projection.Partial = true
+		friends = friends[:8]
+	}
+	projection.Friends = friends
+	return projection, nil
 }
 
 func (b *PlayerbotsListener) observeAffinityLifecycle(data []byte, login bool) error {
