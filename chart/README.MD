@@ -81,6 +81,24 @@ subscribes to its assigned shards; increasing `agent_controller.replicaCount` mo
 shards between pods. The chart enables file-backed JetStream with a bounded event
 stream, Redis actor leases fence overlapping ownership during resharding, and bot
 heartbeats allow state/snapshot recovery after a rollout.
+Set `agent_controller.paused=true` to preserve configuration and shard assignment
+while keeping the controller at zero replicas through chart upgrades. This avoids
+accidentally resuming model calls while updating native services.
+
+Friend-linked progression is opt-in through
+`agent_controller.socialProgression.enabled` (also requires `population.enabled`).
+`realmID` defaults to 1 and `offlineGrace` to `10m`; the chart wires the same realm
+and subject prefix into charserver. Explicit human friend-list relationships and
+live gateway presence steer level pacing and existing capped login scheduling.
+They do not start following, teleport bots, or force logouts.
+
+`agent_controller.roadPreference.enabled` mounts
+`agent_controller.roadPreference.corridors` as a read-only JSON ConfigMap and
+rolls the controller on corridor changes. Entries require `id`, `destination`,
+`map_id`, `evidence`, and `points` (three-coordinate arrays). Supply only verified
+road traces; the default list is empty, preserving ordinary routing. These
+features require updated controller, charserver, and native module images;
+rendering or queue acceptance is not evidence of in-game execution.
 
 The playerbot module must be compiled into the deployed gameserver image with
 ToCloud9's `libsidecar` available at build and runtime. The module publishes to

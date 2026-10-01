@@ -11,10 +11,12 @@ stringData:
     AiPlayerbot.AgentBridge.BotGuid = {{ .Values.playerbots.agentBridge.botGuid }}
     AiPlayerbot.AgentBridge.SubjectPrefix = {{ .Values.agent_controller.subjectPrefix | quote }}
     AiPlayerbot.AgentBridge.Population.Enabled = {{ if and .Values.agent_controller.enabled .Values.agent_controller.population.enabled }}1{{ else }}0{{ end }}
+    AiPlayerbot.AgentBridge.SocialProgression.Enabled = {{ if and .Values.agent_controller.enabled .Values.agent_controller.socialProgression.enabled }}1{{ else }}0{{ end }}
     AiPlayerbot.AgentBridge.PlayerCohortMaxLevel = 10
     AiPlayerbot.RandomBotAutoRandomize = {{ if .Values.playerbots.randomBots.autoRandomize }}1{{ else }}0{{ end }}
     AiPlayerbot.MinRandomBots = 0
     AiPlayerbot.MaxRandomBots = {{ .Values.playerbots.randomBots.maxOnline }}
+    AiPlayerbot.RandomBotConcentrateInPlayerZone = {{ if .Values.playerbots.randomBots.concentrateInPlayerZone }}1{{ else }}0{{ end }}
     AiPlayerbot.RandomBotAccountCount = {{ .Values.playerbots.randomBots.accountCount }}
     {{- if ne .Values.databases.external_db_hostname "" }}
     PlayerbotsDatabaseInfo = {{ printf "%s;%s;%s;%s;%s" .Values.databases.external_db_hostname .Values.databases.external_db_port .Values.databases.db_user .Values.databases.db_password .Values.databases.db_playerbots_name | quote }}

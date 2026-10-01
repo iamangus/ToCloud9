@@ -43,7 +43,7 @@ func (c *charactersOnlineInMem) Remove(ctx context.Context, realmID uint32, guid
 	}
 	c.m.Lock()
 	delete(c.guidStorage[realmID], guid)
-	delete(c.nameStorage[realmID], char.CharName)
+	delete(c.nameStorage[realmID], strings.ToUpper(char.CharName))
 	c.m.Unlock()
 	return nil
 }
@@ -161,7 +161,7 @@ func (c *charactersOnlineInMem) RemoveAllWithGatewayID(ctx context.Context, real
 	}
 
 	for _, guid := range charsToDelete {
-		delete(namesStorage, storage[guid].CharName)
+		delete(namesStorage, strings.ToUpper(storage[guid].CharName))
 		delete(storage, guid)
 	}
 	c.m.Unlock()

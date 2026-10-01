@@ -5,6 +5,9 @@
 {{- if not .Values.playerbots.agentBridge.enabled }}
 {{- fail "agent_controller requires playerbots.agentBridge.enabled=true" }}
 {{- end }}
+{{- if and .Values.agent_controller.socialProgression.enabled (not .Values.agent_controller.population.enabled) }}
+{{- fail "socialProgression requires agent_controller.population.enabled=true" }}
+{{- end }}
 {{- if or (gt (int .Values.agent_controller.replicaCount) 256) (lt (int .Values.agent_controller.replicaCount) 1) }}
 {{- fail "agent_controller.replicaCount must be between 1 and 256" }}
 {{- end }}
@@ -36,13 +39,17 @@ metadata:
     app: {{ $fullname }}-agent-controller
 spec:
   serviceName: {{ $fullname }}-agent-controller
-  replicas: {{ .Values.agent_controller.replicaCount | int }}
+  replicas: {{ if .Values.agent_controller.paused }}0{{ else }}{{ .Values.agent_controller.replicaCount | int }}{{ end }}
   podManagementPolicy: Parallel
   selector:
     matchLabels:
       app: {{ $fullname }}-agent-controller
   template:
     metadata:
+{{ if .Values.agent_controller.roadPreference.enabled }}
+      annotations:
+        checksum/road-corridors: {{ toJson .Values.agent_controller.roadPreference.corridors | sha256sum | quote }}
+{{ end }}
       labels:
         app: {{ $fullname }}-agent-controller
     spec:
@@ -64,6 +71,12 @@ spec:
           labelSelector:
             matchLabels:
               app: {{ $fullname }}-agent-controller
+{{ if .Values.agent_controller.roadPreference.enabled }}
+      volumes:
+        - name: road-corridors
+          configMap:
+            name: {{ $fullname }}-road-corridors
+{{ end }}
       containers:
         - name: agent-controller
           image: "{{ .Values.agent_controller.image.repository }}:{{ .Values.agent_controller.image.tag }}"
@@ -93,6 +106,16 @@ spec:
               value: {{ .Values.agent_controller.decisionQueueCapacity | quote }}
             - name: AGENT_HEALTH_PORT
               value: "8098"
+            - name: AGENT_SOCIAL_PROGRESSION
+              value: {{ .Values.agent_controller.socialProgression.enabled | quote }}
+            - name: AGENT_SOCIAL_REALM
+              value: {{ .Values.agent_controller.socialProgression.realmID | quote }}
+            - name: AGENT_SOCIAL_OFFLINE_GRACE
+              value: {{ .Values.agent_controller.socialProgression.offlineGrace | quote }}
+            - name: AGENT_ROAD_PREFERENCE
+              value: {{ .Values.agent_controller.roadPreference.enabled | quote }}
+            - name: AGENT_ROAD_CORRIDORS_FILE
+              value: /etc/playerbots-roads/corridors.json
             - name: AGENT_POPULATION_ENABLED
               value: {{ .Values.agent_controller.population.enabled | quote }}
             - name: AGENT_POPULATION_TARGET_TOTAL
@@ -121,6 +144,12 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.agent_controller.apiKeySecretName | quote }}
                   key: api-key
+{{ end }}
+{{ if .Values.agent_controller.roadPreference.enabled }}
+          volumeMounts:
+            - name: road-corridors
+              mountPath: /etc/playerbots-roads
+              readOnly: true
 {{ end }}
           ports:
             - name: health

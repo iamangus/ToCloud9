@@ -5,6 +5,11 @@ metadata: {{ $fullname := printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | 
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 spec:
+  {{- if .Values.agent_controller.enabled }}
+  # The social listener owns an in-memory bot directory, not a shared lease.
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       app: {{ $fullname }}-charserver
@@ -25,6 +30,18 @@ spec:
           value: nats://{{ .Release.Name }}-nats:4222
         - name: GUILDS_SERVICE_ADDRESS
           value: {{ .Release.Name }}-guildserver:{{ .Values.guildserver.service.externalPort}}
+        - name: GROUPS_SERVICE_ADDRESS
+          value: {{ .Release.Name }}-groupserver:{{ .Values.groupserver.service.externalPort}}
+        - name: REGISTRY_SERVICE_ADDRESS
+          value: {{ .Release.Name }}-servers-registry:{{ .Values.servers_registry.service.externalPort}}
+        - name: PLAYERBOTS_ENABLED
+          value: {{ .Values.agent_controller.enabled | default false | quote }}
+        - name: PLAYERBOTS_SUBJECT_PREFIX
+          value: {{ .Values.agent_controller.subjectPrefix | quote }}
+        - name: PLAYERBOTS_SOCIAL_PROGRESSION
+          value: {{ .Values.agent_controller.socialProgression.enabled | quote }}
+        - name: PLAYERBOTS_REALM_ID
+          value: {{ .Values.agent_controller.socialProgression.realmID | quote }}
         - name: CHAR_DB_CONNECTION
           valueFrom:
             secretKeyRef:

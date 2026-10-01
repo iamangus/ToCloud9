@@ -1,0 +1,9 @@
+{{- if and .Values.agent_controller.enabled .Values.agent_controller.roadPreference.enabled }}
+{{- $fullname := printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-road-corridors
+data:
+  corridors.json: {{ toJson .Values.agent_controller.roadPreference.corridors | quote }}
+{{- end }}

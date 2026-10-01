@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/walkline/ToCloud9/apps/charserver"
 	"github.com/walkline/ToCloud9/apps/charserver/config"
@@ -17,7 +18,9 @@ import (
 	"github.com/walkline/ToCloud9/apps/charserver/server"
 	"github.com/walkline/ToCloud9/apps/charserver/service"
 	"github.com/walkline/ToCloud9/gen/characters/pb"
+	pbGroup "github.com/walkline/ToCloud9/gen/group/pb"
 	pbGuild "github.com/walkline/ToCloud9/gen/guilds/pb"
+	pbRegistry "github.com/walkline/ToCloud9/gen/servers-registry/pb"
 	"github.com/walkline/ToCloud9/shared/events"
 	shrepo "github.com/walkline/ToCloud9/shared/repo"
 )
@@ -81,9 +84,21 @@ func main() {
 	friendsOnlineCache.SetFriendsService(friendsService)
 
 	// Composite handlers to call both onlineCharsRepo and friendsOnlineCache
-	compositeLoggedInHandler := &compositeLoggedInHandler{
-		handlers: []events.GWCharacterLoggedInHandler{onlineCharsRepo, friendsOnlineCache},
+	var groupResync *service.GroupResyncHandler
+	if conf.PlayerbotsEnabled {
+		groupConn, err := grpc.NewClient(conf.GroupsServiceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatal().Err(err).Msg("cannot connect playerbot social bridge to groups")
+		}
+		defer groupConn.Close()
+		groupResync = service.NewGroupResyncHandler(pbGroup.NewGroupServiceClient(groupConn),
+			events.NewGroupServiceProducerNatsJSON(nc, charserver.Ver), conf.PlayerbotsRealmID, charserver.Ver)
 	}
+	loggedInHandlers := []events.GWCharacterLoggedInHandler{onlineCharsRepo, friendsOnlineCache}
+	if groupResync != nil {
+		loggedInHandlers = append(loggedInHandlers, groupResync)
+	}
+	compositeLoggedInHandler := &compositeLoggedInHandler{handlers: loggedInHandlers}
 	compositeLoggedOutHandler := &compositeLoggedOutHandler{
 		handlers: []events.GWCharacterLoggedOutHandler{onlineCharsRepo, friendsOnlineCache},
 	}
@@ -102,6 +117,31 @@ func main() {
 		log.Fatal().Err(err).Msg("can't listen to gateway updates")
 	}
 	defer gwEventsConsumer.Stop()
+	if conf.PlayerbotsEnabled {
+		groupConn, err := grpc.NewClient(conf.GroupsServiceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatal().Err(err).Msg("cannot connect playerbot social bridge to groups")
+		}
+		defer groupConn.Close()
+		botCtx, cancelBots := context.WithCancel(context.Background())
+		defer cancelBots()
+		listener := service.NewPlayerbotsListener(nc, charRepo, pbGroup.NewGroupServiceClient(groupConn),
+			conf.PlayerbotsSubjectPrefix, conf.PlayerbotsRealmID, charserver.Ver)
+		registryConn, err := grpc.NewClient(conf.RegistryServiceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatal().Err(err).Msg("cannot connect playerbot social bridge to registry")
+		}
+		defer registryConn.Close()
+		listener.SetRegistry(pbRegistry.NewServersRegistryServiceClient(registryConn))
+		if conf.PlayerbotsSocialProgression {
+			listener.SetAffinityDirectory(onlineCharsRepo)
+		}
+		go func() {
+			if err := listener.Run(botCtx); err != nil {
+				log.Fatal().Err(err).Msg("playerbot social bridge stopped")
+			}
+		}()
+	}
 
 	srHandler := service.NewServersRegistryListener(onlineCharsRepo, events.NewCharactersServiceProducerNatsJSON(nc, charserver.Ver), nc)
 	err = srHandler.Listen()

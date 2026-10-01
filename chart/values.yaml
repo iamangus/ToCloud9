@@ -236,6 +236,8 @@ playerbots:
 
 agent_controller:
   enabled: false
+  # Scale to zero without losing the configured virtual-shard assignment.
+  paused: false
   replicaCount: 1
   image:
     repository: ghcr.io/iamangus/playerbot-agent-controller
@@ -254,6 +256,15 @@ agent_controller:
   requestTimeout: 30s
   modelWorkers: 16
   decisionQueueCapacity: 4096
+  # Explicit human friendship only; no implicit affinity from chat/proximity.
+  socialProgression:
+    enabled: false
+    realmID: 1
+    offlineGrace: 10m
+  # Supply only operator-verified same-map road traces; empty keeps native routing.
+  roadPreference:
+    enabled: false
+    corridors: []
   # External bot population management (persistent level-1 bots).
   population:
     enabled: false

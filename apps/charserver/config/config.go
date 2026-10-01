@@ -21,7 +21,13 @@ type Config struct {
 	NatsURL string `yaml:"natsUrl" env:"NATS_URL" env-default:"nats://nats:4222"`
 
 	// GuildsServiceAddress is address of guilds service
-	GuildsServiceAddress string `yaml:"guildsServiceAddress" env:"GUILDS_SERVICE_ADDRESS" env-default:"localhost:8995"`
+	GuildsServiceAddress        string `yaml:"guildsServiceAddress" env:"GUILDS_SERVICE_ADDRESS" env-default:"localhost:8995"`
+	PlayerbotsEnabled           bool   `yaml:"playerbotsEnabled" env:"PLAYERBOTS_ENABLED" env-default:"false"`
+	PlayerbotsSubjectPrefix     string `yaml:"playerbotsSubjectPrefix" env:"PLAYERBOTS_SUBJECT_PREFIX" env-default:"playerbots.v1"`
+	PlayerbotsSocialProgression bool   `yaml:"playerbotsSocialProgression" env:"PLAYERBOTS_SOCIAL_PROGRESSION" env-default:"false"`
+	PlayerbotsRealmID           uint32 `yaml:"playerbotsRealmID" env:"PLAYERBOTS_REALM_ID" env-default:"1"`
+	GroupsServiceAddress        string `yaml:"groupsServiceAddress" env:"GROUPS_SERVICE_ADDRESS" env-default:"localhost:8998"`
+	RegistryServiceAddress      string `yaml:"registryServiceAddress" env:"REGISTRY_SERVICE_ADDRESS" env-default:"localhost:8999"`
 }
 
 // LoadConfig loads config from env variables

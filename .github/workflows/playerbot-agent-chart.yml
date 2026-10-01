@@ -31,4 +31,32 @@ jobs:
           --set agent_controller.enabled=true
           --set agent_controller.replicaCount=4
           --set agent_controller.modelEndpoint=https://llm.example/v1/chat/completions
-          --set agent_controller.modelName=example-model
+           --set agent_controller.modelName=example-model
+      - name: Verify paused social controller and non-overlapping rollouts
+        run: |
+          python3 -m pip install PyYAML==6.0.2
+          helm template test ./chart \
+            --set playerbots.agentBridge.enabled=true \
+            --set agent_controller.enabled=true \
+            --set agent_controller.paused=true \
+            --set agent_controller.population.enabled=true \
+            --set agent_controller.socialProgression.enabled=true \
+            --set agent_controller.roadPreference.enabled=true \
+            --set agent_controller.modelEndpoint=https://llm.example/v1/chat/completions \
+            --set agent_controller.modelName=example-model > /tmp/paused.yaml
+          python3 - <<'PY'
+          import yaml
+          with open('/tmp/paused.yaml') as stream:
+              documents = [d for d in yaml.safe_load_all(stream) if d]
+          controller = next(d for d in documents if d['kind'] == 'StatefulSet' and d['metadata']['name'].endswith('-agent-controller'))
+          assert controller['spec']['replicas'] == 0
+          pod = controller['spec']['template']['spec']
+          env = {e['name']: e.get('value') for e in pod['containers'][0]['env']}
+          assert env['AGENT_SHARD_COUNT'] == '1'
+          assert env['AGENT_SOCIAL_PROGRESSION'] == 'true'
+          assert env['AGENT_ROAD_PREFERENCE'] == 'true'
+          assert pod['containers'][0]['volumeMounts'][0]['readOnly'] is True
+          for suffix in ('-gameserver-ac', '-charserver'):
+              deployment = next(d for d in documents if d['kind'] == 'Deployment' and d['metadata']['name'].endswith(suffix))
+              assert deployment['spec']['strategy']['type'] == 'Recreate'
+          PY

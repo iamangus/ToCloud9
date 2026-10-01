@@ -5,6 +5,11 @@ metadata: {{ $fullname := printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | 
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 spec:
+  {{- if and .Values.agent_controller.enabled .Values.playerbots.agentBridge.enabled }}
+  # Avoid overlapping bot login schedulers during a worldserver rollout.
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       app: {{ $fullname }}-gameserver-ac
